@@ -27,7 +27,7 @@ docker run -d --name xenmcp-docker-agent --restart unless-stopped \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -e XENMCP_AGENT_KEY=<the key from the panel> \
   -p 127.0.0.1:8090:8080 \
-  ghcr.io/xenmcp/docker-agent:1
+  ghcr.io/xenmcp/docker-agent:1.0
 ```
 
 3. Make it reachable over HTTPS through your reverse proxy (below), e.g. `https://docker-agent.example.com/mcp`.
@@ -38,7 +38,7 @@ Or with Docker Compose:
 ```yaml
 services:
   xenmcp-docker-agent:
-    image: ghcr.io/xenmcp/docker-agent:1
+    image: ghcr.io/xenmcp/docker-agent:1.0
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
