@@ -119,4 +119,8 @@ npm test        # unit tests
 npm run e2e     # against your local Docker (starts and removes three busybox containers)
 ```
 
+## Questions and feedback
+
+Ask in the [XenMCP community on Discord](https://discord.gg/gDpBd8vYtG) (forum `#help`, tag `docker-agent`) or open an issue here. Security issues: security@xenmcp.com, not in public.
+
 MIT licence. Made by [Xenaxio](https://xenaxio.com) for [XenMCP](https://xenmcp.com).
