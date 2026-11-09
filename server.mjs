@@ -12,7 +12,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { allowedPath, callerIp, ipIn, logLines, summarizeContainer, summarizeInspect, summarizeStats, toUnix, visible } from './lib.mjs';
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const env = process.env;
 const KEY = env.XENMCP_AGENT_KEY ?? '';
 const ALLOW_IPS = (env.XENMCP_ALLOW_IPS ?? '46.225.57.217').split(',').map((s) => s.trim()).filter(Boolean);

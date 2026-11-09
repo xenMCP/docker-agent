@@ -3,6 +3,8 @@
 # set with --group-add), with a read-only root and no capabilities.
 ARG NODE_IMAGE=node:22-alpine
 FROM ${NODE_IMAGE}
+# Ownership proof for the official MCP Registry (server.json, same name).
+LABEL io.modelcontextprotocol.server.name="com.xenmcp/docker-agent"
 WORKDIR /srv
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --omit=optional --ignore-scripts && npm cache clean --force

@@ -93,6 +93,12 @@ labels:
   - traefik.http.services.xenmcp-agent.loadbalancer.server.port=8080
 ```
 
+## Without XenMCP
+
+The agent is a plain MCP server (Streamable HTTP at `/mcp`), so any client that can send a header works. Set `XENMCP_ALLOW_IPS` to the addresses that may call it (`*` for any, only behind your own proxy or firewall) and send the key as `Authorization: Bearer <key>`. Without XenMCP there is no per-person sign-in and no journal: everyone with the key has the same access.
+
+It is listed in the official MCP Registry as `com.xenmcp/docker-agent` (`server.json` in this repository).
+
 ## Settings
 
 | Variable | Default | |
