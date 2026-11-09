@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.xenmcp/docker-agent",
+  "title": "XenMCP Docker agent",
+  "description": "Read-only MCP server for one Docker host: containers, inspect, logs, stats, events. No exec.",
+  "version": "1.0.1",
+  "websiteUrl": "https://xenmcp.com/catalog/docker/",
+  "repository": {
+    "url": "https://github.com/xenMCP/docker-agent",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/xenmcp/docker-agent:1.0.1",
+      "runtimeHint": "docker",
+      "transport": {
+        "type": "streamable-http",
+        "url": "http://localhost:8080/mcp",
+        "headers": [
+          {
+            "name": "Authorization",
+            "description": "Bearer and the key set in XENMCP_AGENT_KEY",
+            "isRequired": true,
+            "isSecret": true
+          }
+        ]
+      },
+      "environmentVariables": [
+        {
+          "name": "XENMCP_AGENT_KEY",
+          "description": "Key callers must send as Authorization: Bearer (at least 32 characters)",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "XENMCP_ALLOW_IPS",
+          "description": "Addresses or CIDRs allowed to call the agent, comma-separated (default: XenMCP's address)",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}
