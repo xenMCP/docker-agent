@@ -1,6 +1,6 @@
 {
   "name": "xenmcp-docker-agent",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Read-only MCP server for the containers on one Docker host: list, inspect, logs, stats and events. Nothing that starts, stops, removes or execs.",
   "license": "MIT",
   "type": "module",

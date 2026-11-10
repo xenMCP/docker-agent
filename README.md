@@ -97,13 +97,33 @@ labels:
 
 The agent is a plain MCP server (Streamable HTTP at `/mcp`), so any client that can send a header works. Set `XENMCP_ALLOW_IPS` to the addresses that may call it (`*` for any, only behind your own proxy or firewall) and send the key as `Authorization: Bearer <key>`. Without XenMCP there is no per-person sign-in and no journal: everyone with the key has the same access.
 
+### Over stdio, for a local client
+
+Started with `--stdio`, the agent talks MCP over stdin/stdout instead of HTTP: no key, no port, no address list – whoever starts it already has the Docker socket. For Claude Desktop, Cursor or VS Code on the Docker host itself:
+
+```json
+{
+  "mcpServers": {
+    "docker": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--no-healthcheck", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+               "--group-add", "<stat -c %g /var/run/docker.sock>",
+               "-v", "/var/run/docker.sock:/var/run/docker.sock:ro",
+               "ghcr.io/xenmcp/docker-agent:1.0", "node", "server.mjs", "--stdio"]
+    }
+  }
+}
+```
+
+Or from a checkout: `node server.mjs --stdio`. The same six read-only tools; `XENMCP_CONTAINERS` and the `xenmcp.hide` label apply.
+
 It is listed in the official MCP Registry as `com.xenmcp/docker-agent` (`server.json` in this repository).
 
 ## Settings
 
 | Variable | Default | |
 | --- | --- | --- |
-| `XENMCP_AGENT_KEY` | — | Required, at least 32 characters; XenMCP sends it as `Authorization: Bearer`. |
+| `XENMCP_AGENT_KEY` | — | Required over HTTP, at least 32 characters; XenMCP sends it as `Authorization: Bearer`. Not used with `--stdio`. |
 | `XENMCP_ALLOW_IPS` | `46.225.57.217` | Who may call, comma-separated, CIDR allowed. Behind a proxy on a private address the last `X-Forwarded-For` entry counts. |
 | `XENMCP_CONTAINERS` | all | Only these containers, comma-separated, `*` as wildcard (e.g. `shop-*,nginx`). |
 | `XENMCP_MAX_SCAN_MB` | `200` | How much log one search or stream filter reads at most. |
@@ -121,7 +141,7 @@ Hide single containers with the label `xenmcp.hide=true`: they are left out of e
 
 ```bash
 npm ci
-npm test        # unit tests
+npm test        # unit tests and stdio (no Docker needed)
 npm run e2e     # against your local Docker (starts and removes three busybox containers)
 ```
 

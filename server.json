@@ -3,7 +3,7 @@
   "name": "com.xenmcp/docker-agent",
   "title": "XenMCP Docker agent",
   "description": "Read-only MCP server for one Docker host: containers, inspect, logs, stats, events. No exec.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "websiteUrl": "https://xenmcp.com/catalog/docker/",
   "repository": {
     "url": "https://github.com/xenMCP/docker-agent",
@@ -12,7 +12,7 @@
   "packages": [
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/xenmcp/docker-agent:1.0.1",
+      "identifier": "ghcr.io/xenmcp/docker-agent:1.0.2",
       "runtimeHint": "docker",
       "transport": {
         "type": "streamable-http",

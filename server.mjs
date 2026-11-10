@@ -2,17 +2,20 @@
 // host. It sends Docker only the GET requests in lib.mjs (list, inspect, logs,
 // stats, events, version, info) and never returns environment variables or
 // command arguments. Nothing here starts, stops, removes, execs or builds.
-// Callers need the key (Authorization: Bearer) and an allowed address.
+// Over HTTP, callers need the key (Authorization: Bearer) and an allowed address.
+// With --stdio it talks MCP over stdin/stdout instead, for a local client that
+// starts it (Claude Desktop, Cursor, an MCP inspector): no key, no port.
 import { timingSafeEqual } from 'node:crypto';
 import http from 'node:http';
 import { serve } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
+import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { allowedPath, callerIp, ipIn, logLines, summarizeContainer, summarizeInspect, summarizeStats, toUnix, visible } from './lib.mjs';
 
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const env = process.env;
 const KEY = env.XENMCP_AGENT_KEY ?? '';
 const ALLOW_IPS = (env.XENMCP_ALLOW_IPS ?? '46.225.57.217').split(',').map((s) => s.trim()).filter(Boolean);
@@ -24,7 +27,9 @@ const MAX_LINE_CHARS = 2000;
 const MAX_ANSWER_CHARS = 100_000;
 /** How much log one search reads at most. */
 const MAX_SCAN_BYTES = (Number(env.XENMCP_MAX_SCAN_MB) || 200) * 1024 * 1024;
-if (KEY.length < 32) {
+/** Whoever starts the process already has the socket, so stdio needs no key. */
+const STDIO = process.argv.includes('--stdio');
+if (!STDIO && KEY.length < 32) {
   console.error('XENMCP_AGENT_KEY must have at least 32 characters (the key XenMCP shows you)');
   process.exit(1);
 }
@@ -225,18 +230,28 @@ function same(given, want) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-const handler = createMcpHandler(() => buildServer());
-const app = new Hono();
-app.get('/health', (c) => c.json({ ok: true }));
-app.all('/mcp', async (c) => {
-  const ip = callerIp(getConnInfo(c).remote.address, c.req.header('x-forwarded-for'));
-  if (!ALLOW_IPS.includes('*') && !ALLOW_IPS.some((rule) => ipIn(ip, rule))) {
-    console.warn(`[agent] refused ${ip}: not in XENMCP_ALLOW_IPS`);
-    return c.json({ error: 'address not allowed' }, 403);
-  }
-  const auth = c.req.header('authorization') ?? '';
-  if (!/^Bearer\s+/i.test(auth) || !same(auth.replace(/^Bearer\s+/i, ''), KEY)) return c.json({ error: 'invalid key' }, 401);
-  return handler.fetch(c.req.raw);
-});
-app.all('*', (c) => c.json({ error: 'not found' }, 404));
-serve({ fetch: app.fetch, port: PORT, hostname: env.HOST ?? '0.0.0.0' }, () => console.log(`[xenmcp-docker-agent ${VERSION}] listening on ${PORT}; allowed: ${ALLOW_IPS.join(', ')}; containers: ${ONLY.length ? ONLY.join(', ') : 'all'}`));
+if (STDIO) {
+  // stdout carries the protocol: anything we print goes to stderr.
+  await buildServer().connect(new StdioServerTransport());
+  console.error(`[xenmcp-docker-agent ${VERSION}] stdio; containers: ${ONLY.length ? ONLY.join(', ') : 'all'}`);
+} else {
+  startHttp();
+}
+
+function startHttp() {
+  const handler = createMcpHandler(() => buildServer());
+  const app = new Hono();
+  app.get('/health', (c) => c.json({ ok: true }));
+  app.all('/mcp', async (c) => {
+    const ip = callerIp(getConnInfo(c).remote.address, c.req.header('x-forwarded-for'));
+    if (!ALLOW_IPS.includes('*') && !ALLOW_IPS.some((rule) => ipIn(ip, rule))) {
+      console.warn(`[agent] refused ${ip}: not in XENMCP_ALLOW_IPS`);
+      return c.json({ error: 'address not allowed' }, 403);
+    }
+    const auth = c.req.header('authorization') ?? '';
+    if (!/^Bearer\s+/i.test(auth) || !same(auth.replace(/^Bearer\s+/i, ''), KEY)) return c.json({ error: 'invalid key' }, 401);
+    return handler.fetch(c.req.raw);
+  });
+  app.all('*', (c) => c.json({ error: 'not found' }, 404));
+  serve({ fetch: app.fetch, port: PORT, hostname: env.HOST ?? '0.0.0.0' }, () => console.log(`[xenmcp-docker-agent ${VERSION}] listening on ${PORT}; allowed: ${ALLOW_IPS.join(', ')}; containers: ${ONLY.length ? ONLY.join(', ') : 'all'}`));
+}
